@@ -71,8 +71,8 @@ Each task required clear documentation, reproducible analysis, and submission vi
 ---
 
 ### 📌 04_output/ → additional files that were requested during the daily tasks
-- [01_eda_answers.md](./04_output/day1_eda_answers) → Google Sheet Analysis Insights Documentation
-- [02_sat_modeling_summary](./04_output/day4_sat_modeling_summary) → ETL workflow cleaning logic and challenges 
+- [01_eda_answers.md](./04_outputs/day1_eda_answers) → Google Sheet Analysis Insights Documentation
+- [02_sat_modeling_summary](./04_outputs/day4_sat_modeling_summary) → ETL workflow cleaning logic and challenges 
 
 
 ---
