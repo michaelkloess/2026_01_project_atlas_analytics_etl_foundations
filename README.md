@@ -44,14 +44,13 @@ Each task required clear documentation, reproducible analysis, and submission vi
 ---
 
 ### 📌 01_docs/ → Business and project documentation
-- [00_project_structure.md](./01_docs/00_project_structured.md) → Overview of the internship task structure and repository layout  
+- [00_project_structure.md](./01_docs/00_project_structure.md) → Overview of the internship task structure and repository layout  
 - [01_business_use_case.md](./01_docs/01_business_use_case.md) → Context and objectives of the internship tasks  
 - [02_data_requirements.md](./01_docs/02_data_requirements.md) → Description of datasets used throughout the project  
 - [03_preparing_data.md](./01_docs/03_preparing_data.md) → Data loading and preparation steps  
 - [04_data_observations.md](./01_docs/04_data_observations.md) → Observations made during exploratory analysis  
 - [05_bias_injection_log.md](./01_docs/05_bias_injection_log.md) → Notes on assumptions and data limitations  
-- [06_deployment_next_steps.md](./01_docs/06_deployment_next_steps.md) → Ideas for extending the project further  
-- [07_glossary.md](./01_docs/07_glossary.md) → Definitions of technical and domain-specific terms  
+- [06_glossary.md](./01_docs/06_glossary.md) → Definitions of technical and domain-specific terms  
 
 ---
 
@@ -64,9 +63,16 @@ Each task required clear documentation, reproducible analysis, and submission vi
 ---
 
 ### 📌 03_notebooks/ → Jupyter notebooks organized by internship tasks
-- [01_python_data_exploration.ipynb](./03_notebooks/01_python_data_exploration.ipynb) → Python Data Exploration
-- [02_sql_via_python.ipynb](./03_notebooks/02_sql_via_python.ipynb) → SQL via Python: NYC School Data Exploration
-- [03_populating_database.ipynb](./03_notebooks/03_populating_database.ipynb) → Populating a AWS PostgreSQL Database 
+- [01_python_data_exploration.ipynb](./03_notebooks/day2_python_data_exploration.ipynb) → Python Data Exploration
+- [02_sql_via_python.ipynb](./03_notebooks/day3_sql_via_python.ipynb) → SQL via Python: NYC School Data Exploration
+- [03_populating_database.ipynb](./03_notebooks/day4_populating_database.ipynb) → Populating a AWS PostgreSQL Database 
+
+
+---
+
+### 📌 04_output/ → additional files that were requested during the daily tasks
+- [01_eda_answers.md](./04_output/day1_eda_answers) → Google Sheet Analysis Insights Documentation
+- [02_sat_modeling_summary](./04_output/day4_sat_modeling_summary) → ETL workflow cleaning logic and challenges 
 
 
 ---
