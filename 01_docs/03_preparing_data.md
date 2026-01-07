@@ -1,83 +1,81 @@
 # 📕 Data Preparation Documentation
 
-## 📌 Overview
-This document outlines the data preparation process for 2026_01_project_atlas_analytics_etl_foundations, focusing on building an analysis-ready foundation from multiple NYC education datasets. The workflow spans Google Sheets, Python (Pandas), and PostgreSQL, and is organized by data domains (not onboarding days).
+**📌 Overview**
+This document outlines the data preparation process for the atlas project, focusing on building an analysis-ready foundation from multiple NYC education datasets. The workflow spans Google Sheets, Python (Pandas), and PostgreSQL, and is organized by data domains (not onboarding days).
 
 ## 📕 Data Preprocessing Pipeline
 
 ### 📌 1. Column Name Standardization (Cross-Domain Convention)
-
-- **Objective**: Ensure consistent, join-safe, and analysis-friendly column names across datasets  
-- **Rationale**: Reduces schema friction, improves reproducibility, and avoids errors in grouping/filtering  
+```excel
+=REGEXREPLACE(REGEXREPLACE(SUBSTITUTE(LOWER(A1)," ","_"),"[^a-z0-9_]",""),"__","_")
+```
+Alternative variant used:
+```excel
+=REGEXREPLACE(REGEXREPLACE(LOWER('school-safety-report'!A1),"[^a-z0-9]+","_"),"^_|_$","")
+```
+- **Objective**: Ensure consistent, join-safe, and analysis-friendly column names across datasets
+- **Rationale**: Reduces schema friction, improves reproducibility, and avoids errors in grouping/filtering
 - **Output**: Normalized column names (snake_case, alphanumeric + underscores)
 
 ## 📕 Behavioral & Incident Data
 
-### 📌 Dataset: School Safety Report (VADIR)
+**Dataset**: School Safety Report
 
 ### 📌 2. Google Sheets – Column Name Cleaning
-
 ```excel
-=REGEXREPLACE(REGEXREPLACE(LOWER('school-safety-report'!A1),"[^a-z0-9]+", "_"), "^_|_$", "")
+=REGEXREPLACE(REGEXREPLACE(LOWER('school-safety-report'!A1),"[^a-z0-9]+","_"),"^_|_$","")
 ```
-
 - **Objective**: Normalize raw column headers into a consistent schema
 - **Rationale**: Enables stable referencing in formulas and downstream processing
 - **Output**: Standardized headers (lowercase, underscore-separated, special chars removed)
 
 ### 📌 3. Google Sheets – Descriptive Transformations (Exploration Support)
 
-Count Rows
-
+**Count Rows**
+```excel
 =ROWS('[Copy] school-safety-report'!A2:A6311)
+```
 
-
-Count Unique
-
+**Count Unique**
+```excel
 =COUNTUNIQUE('[Copy] school-safety-report'!C2:C)
+```
 
+**% Incidents occurred (Bronx)**
+```excel
+=IFERROR(SUMIF('[Copy] school-safety-report'!Z2:Z,"Bronx",'[Copy] school-safety-report'!R2:R) / SUM('[Copy] school-safety-report'!R2:R),0)
+```
 
-% Incidents occurred (Bronx)
-
-=IFERROR(
-  SUMIF('[Copy] school-safety-report'!Z2:Z,"Bronx",'[Copy] school-safety-report'!R2:R)
-  / SUM('[Copy] school-safety-report'!R2:R),
-  0
-)
-
-
-total_values
-
+**total_values**
+```excel
 =SUM('[Copy] school-safety-report'!M2:M)
+```
 
-
-Unique Boroughs
-
+**Unique Boroughs**
+```excel
 =UNIQUE('[Copy] school-safety-report'!Z2:Z)
+```
 
-
-Sorts by values descending
-
+**Sorts by values descending**
+```excel
 =SORT('Q&A'!A16:B20, 'Q&A'!B16:B20, FALSE)
+```
 
+- **Objective**: Produce quick sanity checks and descriptive statistics (rows, uniques, borough share)
+- **Rationale**: Validate data structure and support early insight generation without code
+- **Output**: Exploration metrics used for reporting and interpretation
 
-Objective: Produce quick sanity checks and descriptive statistics (rows, uniques, borough share)
+#### 📌 Data Quality Notes
+- Data is aggregated (not event-level)
+- NA values may indicate missing reporting or consolidated campus-level reporting
+- No imputation applied; results interpreted descriptively
 
-Rationale: Validate data structure and support early insight generation without code
+## 📕 Core Reference Data
 
-Output: Exploration metrics used for reporting and interpretation
+**Dataset**: High School Directory
 
-📌 Data Quality Notes (School Safety Report)
-
-Data is aggregated (not event-level)
-
-NA values may indicate missing reporting or consolidated campus-level reporting
-
-No imputation applied; results interpreted descriptively
-
-📕 Core Reference Data
-📌 Dataset: High School Directory
-📌 4. Python – Ingestion & Column Standardization
+### 📌 4. Python – Ingestion & Column Standardization
+```python
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -85,35 +83,32 @@ df = pd.read_csv("high-school-directory.csv")
 
 df.columns = (
     df.columns
-      .str.lower()
-      .str.replace(" ", "_")
-      .str.replace("[^a-z0-9_]", "", regex=True)
+     .str.lower()
+     .str.replace(" ", "_")
+     .str.replace("[^a-z0-9_]", "", regex=True)
 )
+```
+- **Objective**: Load the directory dataset and standardize the schema
+- **Rationale**: Required for grouping, filtering, and joins across datasets
+- **Output**: Cleaned DataFrame with normalized column names
 
+### 📌 5. Python – Domain Transformations (Filtering, Aggregation, Visualization)
 
-Objective: Load the directory dataset and standardize the schema
-
-Rationale: Required for grouping, filtering, and joins across datasets
-
-Output: Cleaned DataFrame with normalized column names
-
-📌 5. Python – Domain Transformations (Filtering, Aggregation, Visualization)
-
-Brooklyn filter (case-normalized):
-
+**Brooklyn filter (case-normalized)**
+```python
 filtered_brooklyn_df = df[df["borough"].str.lower() == "brooklyn"]
+```
 
-
-Grade 9 availability using range logic (min/max span):
-
+**Grade 9 availability using range logic (min/max span)**
+```python
 nine_grade_schools_brooklyn_df = filtered_brooklyn_df[
     (filtered_brooklyn_df["grade_span_min"] <= 9) &
     (filtered_brooklyn_df["grade_span_max"] >= 9)
 ]
+```
 
-
-Borough-level summaries:
-
+**Borough-level summaries**
+```python
 schools_per_borough = df.groupby("borough")["dbn"].nunique()
 
 avg_students_per_borough = (
@@ -124,36 +119,34 @@ avg_students_per_borough = (
 )
 
 df.groupby("borough")["grade_span_max"].describe()
+```
 
-
-Visualization:
-
+**Visualization**
+```python
 schools_per_borough.sort_values(ascending=False).plot.bar()
 avg_students_per_borough.sort_values(ascending=False).plot.bar()
+```
 
+- **Objective**: Prepare reference context and compute borough-level descriptors
+- **Rationale**: Directory data is used to contextualize safety, demographics, and outcomes
+- **Output**: Filtered subsets, grouped summaries, and bar charts used in reporting
 
-Objective: Prepare reference context and compute borough-level descriptors
+## 📕 Demographic Data
 
-Rationale: Directory data is used to contextualize safety, demographics, and outcomes
+**Dataset**: School Demographics (PostgreSQL)
 
-Output: Filtered subsets, grouped summaries, and bar charts used in reporting
-
-📕 Demographic Data
-📌 Dataset: School Demographics (PostgreSQL)
-📌 6. SQL via Python – Join Key Normalization
+### 📌 6. SQL via Python – Join Key Normalization
+```sql
 TRIM(UPPER(hsd.dbn)) = TRIM(UPPER(sd.dbn))
+```
+- **Objective**: Ensure consistent dbn matching across relational tables
+- **Rationale**: Prevents join loss from casing/whitespace differences
+- **Output**: Stable joins for borough-level aggregation and segmentation
 
+### 📌 7. SQL via Python – Analytical Aggregations (Preparation for Insights)
 
-Objective: Ensure consistent dbn matching across relational tables
-
-Rationale: Prevents join loss from casing/whitespace differences
-
-Output: Stable joins for borough-level aggregation and segmentation
-
-📌 7. SQL via Python – Analytical Aggregations (Preparation for Insights)
-
-Schools per borough (unique schools):
-
+**Schools per borough (unique schools)**
+```sql
 SELECT 
   hsd.borough AS borough,
   COUNT(DISTINCT(hsd.dbn)) AS cnt_schools
@@ -162,10 +155,10 @@ JOIN nyc_schools.school_safety_report AS ssr
   ON hsd.dbn = ssr.dbn
 GROUP BY hsd.borough
 ORDER BY cnt_schools DESC;
+```
 
-
-Average % ELL per borough:
-
+**Average % ELL per borough**
+```sql
 SELECT
   hsd.borough,
   AVG(sd.ell_percent) AS avg_perc_ell
@@ -174,10 +167,10 @@ LEFT JOIN nyc_schools.school_demographics sd
   ON TRIM(UPPER(hsd.dbn)) = TRIM(UPPER(sd.dbn))
 GROUP BY hsd.borough
 ORDER BY avg_perc_ell ASC;
+```
 
-
-Top 3 schools per borough by SPED % (window function ranking):
-
+**Top 3 schools per borough**
+```sql
 WITH per_school AS (
   SELECT
     TRIM(UPPER(dbn)) AS dbn,
@@ -202,17 +195,18 @@ SELECT
 FROM ranked
 WHERE rank <= 3
 ORDER BY borough, rank;
+```
 
+- **Objective**: Prepare aggregated outputs for downstream interpretation
+- **Rationale**: Borough-level comparisons require clean joins and robust aggregation logic
+- **Output**: Query result sets used for analysis summaries
 
-Objective: Prepare aggregated outputs for downstream interpretation
+## 📕 Academic Outcome Data
 
-Rationale: Borough-level comparisons require clean joins and robust aggregation logic
+**Dataset**: NYC SAT Results
 
-Output: Query result sets used for analysis summaries
-
-📕 Academic Outcome Data
-📌 Dataset: NYC SAT Results
-📌 8. Python – Column Standardization (Schema Normalization)
+### 📌 8. Python – Column Standardization (Schema Normalization)
+```python
 df.columns = (
     df.columns
       .str.strip()
@@ -221,15 +215,13 @@ df.columns = (
       .str.replace(r"_+", "_", regex=True)
       .str.strip("_")
 )
+```
+- **Objective**: Normalize headers into a stable schema for validation + database insertion
+- **Rationale**: Prevents column ambiguity and supports consistent downstream logic
+- **Output**: Clean column names suitable for ETL
 
-
-Objective: Normalize headers into a stable schema for validation + database insertion
-
-Rationale: Prevents column ambiguity and supports consistent downstream logic
-
-Output: Clean column names suitable for ETL
-
-📌 9. Python – Column Exclusions (Reducing Noise & Ambiguity)
+### 📌 9. Python – Column Exclusions (Reducing Noise & Ambiguity)
+```python
 df = df.drop(
     columns=[
         "sat_critical_readng_avg_score",
@@ -239,25 +231,21 @@ df = df.drop(
     ],
     errors="ignore"
 )
+```
+- **Objective**: Remove redundant, internal, or analytically unclear fields
+- **Rationale**: Keep the table outcome-focused and defensible
+- **Output**: Reduced schema for reliable modeling and insertion
 
-
-Objective: Remove redundant, internal, or analytically unclear fields
-
-Rationale: Keep the table outcome-focused and defensible
-
-Output: Reduced schema for reliable modeling and insertion
-
-📌 10. Python – Duplicate Handling
+### 📌 10. Python – Duplicate Handling
+```python
 df = df.drop_duplicates(keep="first")
+```
+- **Objective**: Ensure uniqueness of records before insertion
+- **Rationale**: Prevents duplicated school rows in a fact-like outcomes dataset
+- **Output**: De-duplicated DataFrame
 
-
-Objective: Ensure uniqueness of records before insertion
-
-Rationale: Prevents duplicated school rows in a fact-like outcomes dataset
-
-Output: De-duplicated DataFrame
-
-📌 11. Python – SAT Score Validation (Range Enforcement)
+### 📌 11. Python – SAT Score Validation (Range Enforcement)
+```python
 score_cols = [
     "sat_critical_reading_avg_score",
     "sat_math_avg_score",
@@ -267,38 +255,34 @@ score_cols = [
 for col in score_cols:
     invalid = df[col][~(df[col].between(200, 800) | df[col].isna())]
     assert invalid.empty, f"{col} has invalid values: {invalid.unique()}"
+```
+- **Objective**: Enforce known valid SAT score bounds (200–800)
+- **Rationale**: Prevents invalid values from entering the database
+- **Output**: Validated score columns, pipeline stops if invalid values remain
 
+### 📌 12. Python – Percentage Normalization (pct_students_tested)
 
-Objective: Enforce known valid SAT score bounds (200–800)
-
-Rationale: Prevents invalid values from entering the database
-
-Output: Validated score columns, pipeline stops if invalid values remain
-
-📌 12. Python – Percentage Normalization (pct_students_tested)
-
-Invalid pattern detection:
-
+**Invalid pattern detection**
+```python
 df["pct_students_tested_is_invalid"] = (
     df["pct_students_tested"].isna()
     | df["pct_students_tested"].eq("N/A")
     | ~df["pct_students_tested"].astype(str).str.match(r"^\d+%$", na=False)
 )
+```
 
-
-Normalization and numeric conversion:
-
+**Normalization and numeric conversion**
+```python
 df["pct_students_tested"] = df["pct_students_tested"].str.rstrip("%")
 df["pct_students_tested"] = pd.to_numeric(df["pct_students_tested"], errors="coerce")
+```
 
+- **Objective**: Convert % strings into numeric values suitable for analysis
+- **Rationale**: Percentage fields often contain mixed formatting and missing markers
+- **Output**: Numeric pct_students_tested (coerced to NaN when non-convertible)
 
-Objective: Convert % strings into numeric values suitable for analysis
-
-Rationale: Percentage fields often contain mixed formatting and missing markers
-
-Output: Numeric pct_students_tested (coerced to NaN when non-convertible)
-
-📌 13. Python – Final Output Columns for Database Insert
+### 📌 13. Python – Final Output Columns for Database Insert
+```python
 final_cols = [
     "dbn",
     "school_name",
@@ -310,15 +294,13 @@ final_cols = [
 ]
 
 df_load = df[final_cols].copy()
+```
+- **Objective**: Select and freeze the insertion schema
+- **Rationale**: Explicit schemas improve ETL safety and reviewability
+- **Output**: Clean, insertion-ready DataFrame
 
-
-Objective: Select and freeze the insertion schema
-
-Rationale: Explicit schemas improve ETL safety and reviewability
-
-Output: Clean, insertion-ready DataFrame
-
-📌 14. PostgreSQL Append (Transactional Insert)
+### 📌 14. PostgreSQL Append (Transactional Insert)
+```python
 with engine.begin() as conn:
     df_load.to_sql(
         name="michael_kloess_sat_scores",
@@ -328,34 +310,62 @@ with engine.begin() as conn:
         index=False,
         method="multi"
     )
+```
+- **Objective**: Append cleaned SAT results into PostgreSQL
+- **Rationale**: Transactional insert ensures consistency and reduces partial writes
+- **Output**: Populated table nyc_schools.michael_kloess_sat_scores
 
+## 📕 Data Quality Features
 
-Objective: Append cleaned SAT results into PostgreSQL
+### Join Strategy
+- **Primary join key**: dbn across all domains
+- **Join preparation**: Trimming and casing normalization where needed
+- **Approach**: Executed at query time (no denormalized master table persisted)
 
-Rationale: Transactional insert ensures consistency and reduces partial writes
+### Data Validation
+- Column name consistency across all datasets
+- SAT score range validation (200-800)
+- Percentage format normalization
+- Duplicate record prevention
 
-Output: Populated table nyc_schools.michael_kloess_sat_scores
+### Null Handling
+- NA values interpreted descriptively
+- No imputation applied to aggregated data
+- Invalid percentages coerced to NaN
 
-📕 Integration & Join Strategy
+## 📕 Output Schema
 
-Primary join key across domains: dbn
+### School Identifiers
+- `dbn` (primary join key)
+- `school_name`
+- `borough`
 
-Join preparation includes trimming and casing normalization where needed
+### Institutional Context
+- `grade_span_min`, `grade_span_max`
+- `total_students`
+- School counts per borough
 
-Join approach: executed at query time (no denormalized master table persisted)
+### Safety Metrics
+- Incident counts (aggregated)
+- Borough-level incident percentages
 
-📕 Summary
+### Demographics
+- `ell_percent` (English Language Learners)
+- `sped_percent` (Special Education)
+- Average demographics per borough
 
-The pipeline combines Sheets-based exploration, Python-based cleaning and validation, and SQL-based aggregation.
+### Academic Outcomes
+- `sat_critical_reading_avg_score`
+- `sat_math_avg_score`
+- `sat_writing_avg_score`
+- `num_of_sat_test_takers`
+- `pct_students_tested`
 
-Preparation emphasizes schema consistency, explicit validations, and reproducible transformations.
-
-The resulting datasets support school-level analysis across:
-
-institutional context (directory)
-
-safety metrics (incident report)
-
-demographics (enrollment composition)
-
-outcomes (SAT performance)
+## 📕 Export Configuration
+```python
+# Data loaded via PostgreSQL engine for downstream analysis
+# Visualizations generated via matplotlib for reporting
+```
+- **Output**: Analysis-ready datasets across multiple domains
+- **Format**: School-level metrics with borough-level aggregations
+- **Usage**: Foundation for school-level analysis across institutional context, safety metrics, demographics, and outcomes
