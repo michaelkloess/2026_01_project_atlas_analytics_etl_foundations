@@ -7,7 +7,7 @@ This document presents key observations from exploratory data analysis and ETL p
 
 ## 📕 Data Quality Assessment
 
-### 📌 School Safety Report (VADIR)
+### 📌 School Safety Report
 
 - **6,314 total rows**, of which **6,312 records** are usable after excluding empty columns  
 - **1,890 unique schools** represented  
